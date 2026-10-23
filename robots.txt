@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://motamedy.github.io/sitemap.xml
