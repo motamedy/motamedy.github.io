@@ -45,6 +45,14 @@ body {
   font: 18px/1.6 Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
   position: relative;
 }
+#sky {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
 h1 { font-size: 2.2em; font-weight: normal; line-height: 1.15; margin: 0 0 .3em; color: var(--purple); }
 .term {
   font-family: var(--mono);
@@ -107,6 +115,8 @@ footer { margin-top: 4em; }
 </style>
 </head>
 <body>
+<canvas id="sky" aria-hidden="true"></canvas>
+
 <div class="photo"></div>
 
 <h1>Mobin Motamedi Moghadam</h1>
@@ -208,6 +218,46 @@ footer { margin-top: 4em; }
   document.querySelectorAll("section").forEach(function (s) { io.observe(s); });
 })();
 
+// Starfield: a few hundred slow, twinkling dots that drift a little with the mouse.
+(function () {
+  var c = document.getElementById("sky"), ctx = c.getContext("2d");
+  var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var stars = [], mx = 0, my = 0, ox = 0, oy = 0, w, h, dpr;
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    w = c.width = innerWidth * dpr;
+    h = c.height = innerHeight * dpr;
+    var count = Math.round(innerWidth * innerHeight / 9000);
+    stars = [];
+    for (var i = 0; i < count; i++) {
+      stars.push({
+        x: Math.random() * w, y: Math.random() * h,
+        r: (Math.random() * 1.1 + .2) * dpr,
+        z: Math.random() * .8 + .2,
+        a: Math.random() * Math.PI * 2,
+        s: Math.random() * .015 + .004,
+        tint: Math.random() < .15 ? "185,163,227" : Math.random() < .1 ? "232,220,191" : "230,230,230"
+      });
+    }
+  }
+  function draw() {
+    ox += (mx - ox) * .05; oy += (my - oy) * .05;
+    ctx.clearRect(0, 0, w, h);
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      if (!still) { s.a += s.s; s.y -= s.z * .06 * dpr; if (s.y < 0) s.y += h; }
+      var alpha = .25 + .45 * (.5 + .5 * Math.sin(s.a)) * s.z;
+      var x = (s.x + ox * s.z * 14 * dpr + w) % w;
+      var y = (s.y + oy * s.z * 14 * dpr + h) % h;
+      ctx.fillStyle = "rgba(" + s.tint + "," + alpha + ")";
+      ctx.beginPath(); ctx.arc(x, y, s.r, 0, 6.283); ctx.fill();
+    }
+    if (!still) requestAnimationFrame(draw);
+  }
+  addEventListener("resize", function () { resize(); if (still) draw(); });
+  addEventListener("mousemove", function (e) { mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5; });
+  resize(); draw();
+})();
 </script>
 </body>
 </html>
