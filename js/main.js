@@ -2,6 +2,20 @@ const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = (sel) => document.querySelector(sel);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// The Orange Pi: red while the page comes up, then the green heartbeat of Linux's LED
+// trigger. It doesn't wait for every file to load, only for the page to be usable.
+const born = performance.now();
+setTimeout(() => {
+  $('#pi-led')?.classList.add('ok');
+  const status = $('#pi-status');
+  const uptime = () => {
+    const s = Math.floor((performance.now() - born) / 1000);
+    status.textContent = `up ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  };
+  uptime();
+  setInterval(uptime, 1000);
+}, 900);
+
 // Line under the name: types a phrase, waits, deletes it, next one.
 const phrases = [
   'computer science student',

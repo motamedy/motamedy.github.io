@@ -105,3 +105,17 @@ footer p { margin: .3em 0; }
   .js section > :not(h2) { opacity: 1; transform: none; transition: none; }
   .cursor { animation: none; }
 }
+
+/* Orange Pi, top view: red LED while the page loads, then a green heartbeat. */
+.pi { display: inline-flex; align-items: center; gap: .7em; margin-bottom: 1.6em; cursor: default; }
+.pi svg { width: 92px; height: auto; display: block; }
+.pi-status { font-family: var(--mono); font-size: .72em; color: var(--muted); }
+#pi-led { fill: #ff4b3e; filter: drop-shadow(0 0 2px #ff4b3e); }
+#pi-led.ok { fill: #4ade80; filter: drop-shadow(0 0 2.5px #4ade80); animation: heartbeat 1.3s infinite; }
+@keyframes heartbeat {
+  0%, 9% { opacity: 1; }
+  10%, 19% { opacity: .12; }
+  20%, 29% { opacity: 1; }
+  30%, 100% { opacity: .12; }
+}
+@media (prefers-reduced-motion: reduce) { #pi-led.ok { animation: none; } }
