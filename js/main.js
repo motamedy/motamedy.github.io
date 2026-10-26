@@ -43,6 +43,19 @@ async function typeLoop() {
 }
 if (!still && typed) { typed.textContent = ''; typeLoop(); }
 
+// "Mobin": a small light that follows the pointer and lights up the letters under it.
+const mobin = $('#mobin');
+if (mobin) {
+  const aim = (e) => {
+    const r = mobin.getBoundingClientRect();
+    mobin.style.setProperty('--x', `${e.clientX - r.left}px`);
+    mobin.style.setProperty('--y', `${e.clientY - r.top}px`);
+  };
+  mobin.addEventListener('pointerenter', (e) => { aim(e); mobin.classList.add('lit'); });
+  mobin.addEventListener('pointermove', aim);
+  mobin.addEventListener('pointerleave', () => mobin.classList.remove('lit'));
+}
+
 // Section headings type themselves in as they scroll into view.
 if (!still && 'IntersectionObserver' in window) {
   document.documentElement.classList.add('js');
