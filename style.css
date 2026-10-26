@@ -141,3 +141,40 @@ footer p { margin: .3em 0; }
   box-shadow: 0 0 6px 2px rgba(255, 236, 190, .7), 0 0 20px 7px rgba(232, 220, 191, .22);
   pointer-events: none;
 }
+
+/* "Linux", with what it really means typed out on hover. */
+.tip {
+  position: relative;
+  text-decoration: underline dotted var(--muted);
+  text-underline-offset: .2em;
+  cursor: help;
+  outline: none;
+}
+.tip:focus-visible { text-decoration-color: var(--cream); }
+.tip .bubble {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + .45em);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: .25em .6em;
+  background: #222;
+  border: 1px solid var(--line);
+  color: var(--cream);
+  font-family: var(--mono);
+  font-size: .72em;
+  visibility: hidden;
+  pointer-events: none;
+}
+.tip .bubble::after {
+  content: "";
+  display: inline-block;
+  width: .5em;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -.12em;
+  background: var(--cream);
+  animation: blink 1s steps(1) infinite;
+}
+.tip.open .bubble { visibility: visible; }
+@media (prefers-reduced-motion: reduce) { .tip .bubble::after { animation: none; } }

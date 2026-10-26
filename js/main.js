@@ -56,6 +56,33 @@ if (mobin) {
   mobin.addEventListener('pointerleave', () => mobin.classList.remove('lit'));
 }
 
+// "Linux", and the truth typed out above it.
+for (const tip of document.querySelectorAll('.tip')) {
+  const bubble = document.createElement('span');
+  bubble.className = 'bubble';
+  bubble.setAttribute('role', 'tooltip');
+  tip.append(bubble);
+  let timer;
+  const show = () => {
+    clearTimeout(timer);
+    const text = tip.dataset.tip;
+    tip.classList.add('open');
+    if (still) { bubble.textContent = text; return; }
+    let i = 0;
+    const step = () => {
+      bubble.textContent = text.slice(0, ++i);
+      if (i < text.length) timer = setTimeout(step, 60 + Math.random() * 70);
+    };
+    bubble.textContent = '';
+    timer = setTimeout(step, 120);
+  };
+  const hide = () => { clearTimeout(timer); tip.classList.remove('open'); };
+  tip.addEventListener('pointerenter', show);
+  tip.addEventListener('pointerleave', hide);
+  tip.addEventListener('focus', show);
+  tip.addEventListener('blur', hide);
+}
+
 // Section headings type themselves in as they scroll into view.
 if (!still && 'IntersectionObserver' in window) {
   document.documentElement.classList.add('js');
