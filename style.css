@@ -1,0 +1,107 @@
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("fonts/jetbrains-mono-latin-500-normal.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+
+:root {
+  --bg: #191919;
+  --text: #c9c6c1;
+  --muted: #8a8784;
+  --purple: #b9a3e3;
+  --cream: #e8dcbf;
+  --line: #333;
+  --mono: "JetBrains Mono", ui-monospace, "DejaVu Sans Mono", monospace;
+}
+html { background: var(--bg); color-scheme: dark; }
+body {
+  max-width: 36em;
+  margin: 0 auto;
+  padding: 3em 1em 4em;
+  color: var(--text);
+  font: 18px/1.6 Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+  position: relative;
+}
+#sky {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+h1 { font-size: 2.2em; font-weight: normal; line-height: 1.15; margin: 0 0 .3em; color: var(--purple); }
+
+.term {
+  font-family: var(--mono);
+  font-size: .85em;
+  color: var(--cream);
+  min-height: 1.6em;
+  margin: 0 0 .2em;
+}
+.term .prompt { color: var(--purple); }
+.cursor {
+  display: inline-block;
+  width: .55em;
+  height: 1.1em;
+  margin-left: 1px;
+  vertical-align: -.15em;
+  background: var(--cream);
+  animation: blink 1s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+h2 {
+  font-family: var(--mono);
+  font-size: .9em;
+  font-weight: 500;
+  color: var(--purple);
+  margin: 3em 0 .7em;
+  min-height: 1.6em;
+}
+a { color: var(--purple); text-decoration-color: #5e5275; text-underline-offset: .15em; transition: text-decoration-color .2s; }
+a:hover { text-decoration-color: var(--purple); }
+.p { color: var(--purple); }
+.c { color: var(--cream); }
+.small { color: var(--muted); font-size: .9em; }
+.mono { font-family: var(--mono); font-size: .78em; }
+.date { font-family: var(--mono); font-size: .78em; color: var(--muted); }
+.links { font-family: var(--mono); font-size: .85em; }
+ul { padding-left: 1.2em; }
+li { margin-bottom: .4em; }
+li::marker { color: var(--muted); }
+
+/* Photo: put photo.jpg next to this file and replace the div with
+   <img class="photo" src="photo.jpg" alt="Mobin Motamedi Moghadam"> */
+.photo {
+  float: right;
+  width: 120px;
+  height: 150px;
+  margin: 0 0 1em 1.5em;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  object-fit: cover;
+}
+
+footer { margin-top: 4em; }
+footer p { margin: .3em 0; }
+
+@media (max-width: 30em) {
+  .photo { width: 90px; height: 112px; }
+  h1 { font-size: 1.8em; }
+}
+
+/* scroll reveal, only when JS is running */
+.js section > :not(h2) { opacity: 0; transform: translateY(8px); transition: opacity .6s ease, transform .6s ease; }
+.js section.shown > :not(h2) { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .js section > :not(h2) { opacity: 1; transform: none; transition: none; }
+  .cursor { animation: none; }
+}
