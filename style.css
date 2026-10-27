@@ -178,3 +178,57 @@ footer p { margin: .3em 0; }
 }
 .tip.open .bubble { visibility: visible; }
 @media (prefers-reduced-motion: reduce) { .tip .bubble::after { animation: none; } }
+
+kbd { font-family: var(--mono); color: var(--cream); }
+
+/* Buttons that look like terminal text. */
+.textbtn {
+  font: 400 .78rem var(--mono);
+  color: var(--muted);
+  background: none;
+  border: 0;
+  padding: .2em 0;
+  cursor: pointer;
+}
+.textbtn:hover { color: var(--cream); }
+
+/* Dialogs, like the keys help (a man page). */
+dialog.card {
+  max-width: min(34em, calc(100vw - 2em));
+  background: #1f1f1f;
+  color: var(--text);
+  border: 1px solid #3a3346;
+  padding: 1.2em 1.4em;
+  font-size: .9em;
+}
+dialog.card::backdrop { background: rgba(10, 10, 12, .6); }
+dialog.card h3 { font: 500 1em var(--mono); color: var(--purple); margin: 0 0 .6em; }
+dialog.card form { text-align: right; margin: .6em 0 0; }
+.man-head { display: flex; justify-content: space-between; color: var(--muted); font-size: .9em; margin: 0 0 1em; }
+.keys { display: grid; grid-template-columns: 7em 1fr; gap: .3em 1em; margin: 0; }
+.keys dt { color: var(--cream); }
+.keys dd { margin: 0; }
+@media (max-width: 30em) { .keys { grid-template-columns: 5em 1fr; } }
+
+/* Echo line: what the last key did, like a shell's status line. */
+.echo {
+  position: fixed;
+  left: 1em;
+  bottom: .8em;
+  font-family: var(--mono);
+  font-size: .72rem;
+  color: var(--cream);
+  background: rgba(25, 25, 25, .85);
+  padding: .2em .5em;
+  opacity: 0;
+  transition: opacity .3s;
+  pointer-events: none;
+}
+.echo.show { opacity: 1; transition: none; }
+html.vbell::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(232, 220, 191, .07);
+  pointer-events: none;
+}

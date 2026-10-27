@@ -99,7 +99,22 @@
 </section>
 
 <footer class="small mono">
-<p>last updated 2026-10</p>
+<p>last updated 2026-10 · press <kbd>?</kbd> for keys</p>
 </footer>
+
+<dialog class="card mono" id="keys-help">
+  <p class="man-head"><span>MOTAMEDY(1)</span><span>keys</span><span>MOTAMEDY(1)</span></p>
+  <dl class="keys">
+    <dt>j, k</dt><dd>next, previous section</dd>
+    <dt>gg, G</dt><dd>top, bottom of the page</dd>
+    <dt>b</dt><dd>bell on or off</dd>
+    <dt>?</dt><dd>this page</dd>
+    <dt>q, Esc</dt><dd>close</dd>
+  </dl>
+  <p>Any other key rings the bell.</p>
+  <form method="dialog"><button class="textbtn">q</button></form>
+</dialog>
+
+<div class="echo" id="echo" role="status"></div>
 </body>
 </html>

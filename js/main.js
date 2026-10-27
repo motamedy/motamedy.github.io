@@ -1,3 +1,6 @@
+import { beep } from './bell.js';
+import { startKeys, echo } from './keys.js';
+
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = (sel) => document.querySelector(sel);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -15,6 +18,7 @@ setTimeout(() => {
   uptime();
   setInterval(uptime, 1000);
 }, 900);
+$('#pi')?.addEventListener('click', () => { beep(1000, 140); echo('POST: one beep, all good'); });
 
 // Line under the name: types a phrase, waits, deletes it, next one.
 const phrases = [
@@ -151,3 +155,5 @@ function starfield(c) {
   draw();
 }
 starfield($('#sky'));
+
+startKeys({ echoBox: $('#echo'), help: $('#keys-help') });
