@@ -5,3 +5,6 @@ with position, magnitude and B-V colour, quantised into 6 bytes per star. Made w
 `tools/make_stars.py` from `hygdata_v41.csv`.
 Source: HYG database by David Nash, https://codeberg.org/astronexus/hyg,
 licensed CC BY-SA 4.0. This derived file is under the same licence.
+
+`iss.tle`: the ISS orbit as two-line elements from CelesTrak, refreshed daily by
+`.github/workflows/iss-orbit.yml`.

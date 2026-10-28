@@ -3,7 +3,7 @@
 
 import {
   RAD, skyMatrix, horizonMatrix, apply, sun, moon, planets, topocentricAlt, refraction,
-  altAzToVec, vecToAltAz, PLANET_COLORS,
+  altAzToVec, vecToAltAz, enuFrom, PLANET_COLORS,
 } from './astro.js';
 import {
   limitTable, limitAt, countVisible, skyParts, skyMag, skyColor, nelm, bortle,
@@ -11,7 +11,8 @@ import {
 } from './model.js';
 import { loadCatalog, milkyWay, rng } from './catalog.js';
 import { cloudTexture, cloudColor } from './clouds.js';
-import { weather } from './feeds.js';
+import { weather, aircraft, issTle } from './feeds.js';
+import { makeIss } from './iss.js';
 import { Painter } from './render.js';
 
 export const MASHHAD = { lat: 36.2972, lon: 59.6067, elev: 995 };
@@ -27,7 +28,7 @@ const MODES = {
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const state = {
   mode: 'mashhad', cat: null, milky: milkyWay(),
-  wx: new Map(), compare: null,
+  wx: new Map(), planes: [], iss: null, passes: [], compare: null,
   scene: null, version: 0, computedAt: 0,
 };
 
@@ -153,7 +154,7 @@ function compute(now) {
     veil: 0.55 + 0.33 * brightness,
     visibleNow: Math.round(k * (clouds && wx?.clouds ? 1 - wx.clouds.total : 1)),
     limZenith, skyMagZenith: skyMag(cond, 90), aod,
-    movers: () => [],
+    movers: live ? (ms) => movers(place, ms, sunAlt) : () => [],
   };
   state.computedAt = now;
 }
@@ -166,6 +167,28 @@ function texture(kind, cover, color, opacity) {
     textures.set(key, cloudTexture(kind, cover, color, opacity));
   }
   return textures.get(key);
+}
+
+function movers(place, ms, sunAlt) {
+  const out = [];
+  if (state.iss) {
+    const l = state.iss.look(place, ms);
+    if (l && l.alt > -1) out.push({ kind: 'iss', vec: l.vec, visible: l.sunlit && sunAlt < -4 });
+  }
+  if (place === MASHHAD) {
+    for (const p of state.planes) {
+      const age = (ms - p.at) / 1000;
+      if (age > 90) continue;
+      const pos = (sec) => {
+        const d = p.gs * 0.514444 * sec, tr = p.track * Math.PI / 180;
+        const lat = p.lat + d * Math.cos(tr) / 111320;
+        const lon = p.lon + d * Math.sin(tr) / (111320 * Math.cos(p.lat * Math.PI / 180));
+        return enuFrom(place, lat, lon, p.altFt * 0.0003048).vec;
+      };
+      out.push({ kind: 'plane', vec: pos(age), ahead: pos(age + 20), dark: sunAlt < -3, label: p.call, seed: p.seed });
+    }
+  }
+  return out;
 }
 
 // Clear, moonless night in Mashhad: with today's air and its lights, and with neither.
@@ -190,6 +213,7 @@ function compare(now) {
 const tehran = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Tehran', weekday: 'short', hour: '2-digit', minute: '2-digit' });
 const utc = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', weekday: 'short', hour: '2-digit', minute: '2-digit' });
 const timeAt = (place, ms) => place === MASHHAD ? tehran.format(ms) : utc.format(ms - 8 * 3600000);
+const compass = (az) => ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(az / 45) % 8];
 const num = (x) => Math.round(x).toLocaleString('en-US');
 
 function sunWords(alt) {
@@ -198,6 +222,17 @@ function sunWords(alt) {
   if (alt > -12) return 'below the horizon (nautical twilight)';
   if (alt > -18) return 'below the horizon (astronomical twilight)';
   return `${Math.round(-alt)}° below the horizon: full night`;
+}
+
+function distanceKm(a, b) {
+  const r = Math.PI / 180, dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLon / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(h));
+}
+function bearing(a, b) {
+  const r = Math.PI / 180, y = Math.sin((b.lon - a.lon) * r) * Math.cos(b.lat * r);
+  const x = Math.cos(a.lat * r) * Math.sin(b.lat * r) - Math.sin(a.lat * r) * Math.cos(b.lat * r) * Math.cos((b.lon - a.lon) * r);
+  return (Math.atan2(y, x) / r + 360) % 360;
 }
 
 function renderStats(el) {
@@ -241,6 +276,9 @@ function renderStats(el) {
   }
   if (sc.mode === 'antipode') row('under your feet', 'these are the stars below Mashhad’s horizon right now');
 
+  row('ISS', issWords(sc));
+  if (sc.mode === 'mashhad') row('aircraft', planeWords());
+
   el.replaceChildren(...rows.map(([k, v]) => {
     const div = document.createElement('div');
     const dt = document.createElement('dt'), dd = document.createElement('dd');
@@ -248,6 +286,26 @@ function renderStats(el) {
     div.append(dt, dd);
     return div;
   }));
+}
+
+function issWords(sc) {
+  if (!state.iss) return state.issError ? 'orbit data unavailable right now' : 'loading orbit…';
+  const now = state.iss.look(sc.place, Date.now());
+  const up = now && now.alt > 0 ? `up now, ${Math.round(now.alt)}° high in the ${compass(now.az)}${now.sunlit ? '' : ' (in Earth’s shadow)'}. ` : '';
+  const next = state.passes.find((p) => p.visible && p.end > Date.now());
+  if (!next) return up + 'no visible pass in the next 3 days';
+  const start = next.visStart ?? next.start, az = next.visStartAz ?? next.startAz;
+  return `${up}next visible pass ${timeAt(sc.place, start)}, rising in the ${compass(az)}, up to ${Math.round(next.maxAlt)}°`;
+}
+
+function planeWords() {
+  if (state.planeError) return 'no live data right now';
+  if (!state.planes.length) return 'none tracked nearby right now (volunteer receivers over Iran are few)';
+  const list = state.planes
+    .map((p) => ({ p, d: distanceKm(MASHHAD, p), b: bearing(MASHHAD, p) }))
+    .sort((a, b) => a.d - b.d).slice(0, 4)
+    .map(({ p, d, b }) => `${p.call} ${num(p.altFt)} ft, ${Math.round(d)} km ${compass(b)}`);
+  return `${state.planes.length} nearby: ${list.join(' · ')}`;
 }
 
 // ---- wiring ----
@@ -267,11 +325,20 @@ export async function startSky({ background, dome, stats, buttons }) {
     if (still) draw(0);
   }
 
+  // Passes depend on where you stand, so recompute them when the place changes.
+  function updatePasses(force) {
+    const place = MODES[state.mode].place;
+    if (!state.iss || (!force && state.passPlace === place)) return;
+    state.passes = state.iss.passes(place, Date.now());
+    state.passPlace = place;
+  }
+
   function setMode(mode) {
     if (!MODES[mode]) return;
     state.mode = mode;
     try { localStorage.setItem('sky-mode', mode); } catch { /* fine */ }
     for (const b of buttons) b.setAttribute('aria-pressed', String(b.dataset.mode === mode));
+    updatePasses(false);
     refresh();
   }
   for (const b of buttons) b.addEventListener('click', () => setMode(b.dataset.mode));
@@ -307,6 +374,32 @@ export async function startSky({ background, dome, stats, buttons }) {
   };
   pullWeather();
   setInterval(pullWeather, 15 * 60000);
+
+  const pullPlanes = async () => {
+    if (document.hidden || state.mode !== 'mashhad') return;
+    try {
+      const list = await aircraft(MASHHAD);
+      state.planes = list.map((p) => ({ ...p, seed: hashUnit(parseInt(p.id, 16) || 1) * 10 }));
+      state.planeError = false;
+    } catch {
+      state.planeError = true;
+    }
+    renderStats(stats);
+  };
+  pullPlanes();
+  setInterval(pullPlanes, 20000);
+
+  const pullIss = async () => {
+    try {
+      state.iss = await makeIss(await issTle());
+      updatePasses(true);
+    } catch {
+      state.issError = true;
+    }
+    renderStats(stats);
+  };
+  pullIss();
+  setInterval(() => updatePasses(true), 30 * 60000);
 
   setInterval(refresh, 10000);
   if (still) return;
