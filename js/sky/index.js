@@ -10,6 +10,8 @@ import {
   CLEAN_AOD,
 } from './model.js';
 import { loadCatalog, milkyWay, rng } from './catalog.js';
+import { cloudTexture, cloudColor } from './clouds.js';
+import { weather } from './feeds.js';
 import { Painter } from './render.js';
 
 export const MASHHAD = { lat: 36.2972, lon: 59.6067, elev: 995 };
@@ -25,7 +27,7 @@ const MODES = {
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const state = {
   mode: 'mashhad', cat: null, milky: milkyWay(),
-  compare: null,
+  wx: new Map(), compare: null,
   scene: null, version: 0, computedAt: 0,
 };
 
@@ -48,7 +50,8 @@ const normalize = (v) => { const l = Math.hypot(...v) || 1; return v.map((x) => 
 
 function compute(now) {
   const mode = MODES[state.mode], place = mode.place, cat = state.cat;
-  const aod = mode.clean ? CLEAN_AOD : place === ANTIPODE ? 0.08 : 0.25;
+  const wx = state.wx.get(place);
+  const aod = mode.clean ? CLEAN_AOD : (wx?.air?.aod ?? (place === ANTIPODE ? 0.08 : 0.25));
   const t = mode.clean ? darkTime(now) : now;
   const live = t === now;
   const M = skyMatrix(t, place.lat, place.lon), H = horizonMatrix(t, place.lat, place.lon);
@@ -121,6 +124,19 @@ function compute(now) {
     };
   }
 
+  let clouds = null;
+  if (!mode.clean && wx?.clouds) {
+    const c = wx.clouds;
+    const col = cloudColor(sunAlt, moonInfo, mode.polluted, aod);
+    const low = 1 - (1 - c.low) * (1 - c.mid);
+    const towards = ((c.windFrom ?? 0) + 180) * Math.PI / 180, speed = (c.windSpeed ?? 8) * 0.12;
+    clouds = {
+      low: texture('low', low, col, 0.95),
+      high: texture('high', c.high, col, 0.5),
+      wind: [-Math.sin(towards) * speed, -Math.cos(towards) * speed],
+    };
+  }
+
   const twinkle = [];
   const order = Array.from({ length: k }, (_, i) => i).sort((a, b) => s.margin[b] - s.margin[a]).slice(0, 40);
   for (const i of order) {
@@ -131,15 +147,25 @@ function compute(now) {
   state.scene = {
     version: ++state.version, t, live, place, mode: state.mode, cond, table, sunAlt, moonInfo,
     sky: { zenith: color(90), mid: color(45), low: color(15), horizon: color(1) },
-    glow, stars: s, planets: pl, milky, clouds: null, twinkle,
+    glow, stars: s, planets: pl, milky, clouds, twinkle,
     sun: { vec: sunVec },
     moon: moonAlt > -1 ? { vec: moonVec, lit: mo.lit, toward: normalize(moonVec.map((m, i) => m + 0.05 * toSun[i])) } : null,
     veil: 0.55 + 0.33 * brightness,
-    visibleNow: k,
+    visibleNow: Math.round(k * (clouds && wx?.clouds ? 1 - wx.clouds.total : 1)),
     limZenith, skyMagZenith: skyMag(cond, 90), aod,
     movers: () => [],
   };
   state.computedAt = now;
+}
+
+const textures = new Map();
+function texture(kind, cover, color, opacity) {
+  const key = `${kind}|${Math.round(cover * 40)}|${color.map((c) => c >> 3).join()}`;
+  if (!textures.has(key)) {
+    if (textures.size > 12) textures.clear();
+    textures.set(key, cloudTexture(kind, cover, color, opacity));
+  }
+  return textures.get(key);
 }
 
 // Clear, moonless night in Mashhad: with today's air and its lights, and with neither.
@@ -148,7 +174,7 @@ function compare(now) {
   const t = darkTime(now), M = skyMatrix(t, MASHHAD.lat, MASHHAD.lon), cat = state.cat;
   const up = new Float32Array(cat.count);
   for (let i = 0; i < cat.count; i++) up[i] = M[6] * cat.x[i] + M[7] * cat.y[i] + M[8] * cat.z[i];
-  const aod = 0.25;
+  const aod = state.wx.get(MASHHAD)?.air?.aod ?? 0.25;
   const dirty = { polluted: true, aod, sunAlt: -30, moon: null };
   const clean = { polluted: false, aod: CLEAN_AOD, sunAlt: -30, moon: null };
   state.compare = {
@@ -179,6 +205,7 @@ function renderStats(el) {
   if (!sc || !el) return;
   const rows = [];
   const row = (k, v) => rows.push([k, v]);
+  const wx = state.wx.get(sc.place);
 
   if (sc.mode === 'antipode') {
     row('place', '36.30°S 120.39°W, open Pacific, 995 m above the water');
@@ -194,6 +221,12 @@ function renderStats(el) {
   const m = sc.moonInfo;
   row('moon', `${Math.round(m.lit * 100)}% lit, ${m.waxing ? 'waxing' : 'waning'}, ${m.alt > 0 ? `${Math.round(m.alt)}° up` : 'below the horizon'}`);
 
+  if (sc.mode !== 'pristine') {
+    const c = wx?.clouds;
+    row('clouds', c ? `${Math.round(c.total * 100)}% (low ${Math.round(c.low * 100)}, middle ${Math.round(c.mid * 100)}, high ${Math.round(c.high * 100)})` : 'no data yet');
+    const a = wx?.air;
+    row('air', a ? `PM2.5 ${Math.round(a.pm25)} µg/m³ · aerosol depth ${a.aod?.toFixed(2)} · US AQI ${Math.round(a.aqi)}` : 'no data yet');
+  }
   if (sc.mode === 'mashhad') {
     row('light pollution', `about ${sc.skyMagZenith.toFixed(1)} mag/arcsec² overhead, Bortle ${bortle(sc.skyMagZenith)} (an estimate; a dark site is 21.9)`);
   } else if (sc.mode === 'antipode') {
@@ -263,6 +296,17 @@ export async function startSky({ background, dome, stats, buttons }) {
   }
   compare(Date.now());
   refresh();
+
+  // Feeds. Each one quietly keeps the last good value.
+  const pullWeather = async () => {
+    for (const place of [MASHHAD, ANTIPODE]) {
+      try { state.wx.set(place, await weather(place)); } catch { /* keep old */ }
+    }
+    compare(Date.now());
+    refresh();
+  };
+  pullWeather();
+  setInterval(pullWeather, 15 * 60000);
 
   setInterval(refresh, 10000);
   if (still) return;
