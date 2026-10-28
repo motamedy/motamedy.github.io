@@ -32,6 +32,8 @@ function jump(dir) {
   }
 }
 
+const SKY = { 1: ['mashhad', 'Mashhad, now'], 2: ['antipode', 'the other side of the Earth'], 3: ['pristine', 'Mashhad without pollution'] };
+
 export function startKeys({ echoBox, help }) {
   echoEl = echoBox;
   let pendingG = false, gTimer;
@@ -66,6 +68,10 @@ export function startKeys({ echoBox, help }) {
       case 'G':
         scrollTo({ top: document.documentElement.scrollHeight, behavior: smooth });
         echo('G');
+        break;
+      case '1': case '2': case '3':
+        dispatchEvent(new CustomEvent('sky:mode', { detail: SKY[key][0] }));
+        echo('sky: ' + SKY[key][1]);
         break;
       case '?':
         help?.showModal?.();

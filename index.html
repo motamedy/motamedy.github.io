@@ -27,7 +27,7 @@
 }
 </script>
 <script type="module" src="js/main.js"></script>
-<noscript><style>#pi-led { fill: #4ade80; filter: drop-shadow(0 0 2.5px #4ade80); }</style></noscript>
+<noscript><style>#pi-led { fill: #4ade80; filter: drop-shadow(0 0 2.5px #4ade80); } .needs-js { display: none; }</style></noscript>
 </head>
 <body>
 <canvas id="sky" aria-hidden="true"></canvas>
@@ -90,6 +90,20 @@
 <p>B.Sc. Computer Science, <a href="https://en.wikipedia.org/wiki/Ferdowsi">Ferdowsi</a> <a href="https://www.um.ac.ir/">University of Mashhad</a> <span class="date">2024 → 2028</span></p>
 </section>
 
+<section id="sky-section">
+<h2 data-type="~/sky">Sky</h2>
+<p>The sky over Mashhad right now, worked out from a catalogue of 12,000 stars, the Sun, the Moon and the planets. A dimmed copy of it sits behind this whole page.</p>
+<canvas class="sky-dome needs-js" id="dome" role="img" aria-label="Chart of the sky overhead: north at the top, east on the left, horizon at the edge"></canvas>
+<div class="sky-modes needs-js" role="group" aria-label="Which sky">
+  <button type="button" class="textbtn" data-mode="mashhad"><kbd>1</kbd>Mashhad, now</button>
+  <button type="button" class="textbtn" data-mode="antipode"><kbd>2</kbd>the other side of the Earth</button>
+  <button type="button" class="textbtn" data-mode="pristine"><kbd>3</kbd>Mashhad without pollution</button>
+</div>
+<dl class="sky-stats needs-js" id="sky-stats"></dl>
+<p class="small note">Looking straight up, with north at the top and east on the left. Mashhad's artificial sky glow is an estimate, not a measurement.</p>
+<noscript><p class="small">The live sky needs JavaScript.</p></noscript>
+</section>
+
 <section>
 <h2 data-type="~/contact">Contact</h2>
 <p class="links">email: <a href="mailto:Mobinmotamedim@gmail.com">Mobinmotamedim@gmail.com</a><br>
@@ -100,6 +114,7 @@
 
 <footer class="small mono">
 <p>last updated 2026-10 · press <kbd>?</kbd> for keys</p>
+<p class="credits">sky data: stars from the <a href="https://codeberg.org/astronexus/hyg">HYG database</a> (CC BY-SA 4.0)</p>
 </footer>
 
 <dialog class="card mono" id="keys-help">
@@ -107,6 +122,7 @@
   <dl class="keys">
     <dt>j, k</dt><dd>next, previous section</dd>
     <dt>gg, G</dt><dd>top, bottom of the page</dd>
+    <dt>1 2 3</dt><dd>sky: Mashhad now, the other side of the Earth, no pollution</dd>
     <dt>b</dt><dd>bell on or off</dd>
     <dt>?</dt><dd>this page</dd>
     <dt>q, Esc</dt><dd>close</dd>

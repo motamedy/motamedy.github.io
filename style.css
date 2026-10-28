@@ -232,3 +232,22 @@ html.vbell::after {
   background: rgba(232, 220, 191, .07);
   pointer-events: none;
 }
+
+/* ~/sky */
+.sky-dome {
+  display: block;
+  width: min(100%, 470px);
+  aspect-ratio: 1;
+  margin: 1.2em auto .6em;
+  touch-action: manipulation;
+}
+.sky-modes { display: flex; flex-wrap: wrap; justify-content: center; gap: .3em 1.2em; margin: 0 0 1.2em; }
+.sky-modes button kbd { color: var(--purple); margin-right: .45em; }
+.sky-modes button[aria-pressed="true"] { color: var(--cream); text-decoration: underline; text-underline-offset: .3em; text-decoration-color: var(--purple); }
+.sky-stats { margin: 0; font-family: var(--mono); font-size: .72em; line-height: 1.55; }
+.sky-stats div { display: grid; grid-template-columns: 11em 1fr; gap: 1em; padding: .18em 0; border-top: 1px solid #262626; }
+.sky-stats dt { color: var(--muted); }
+.sky-stats dd { margin: 0; color: var(--text); }
+.note { margin-top: 1em; }
+.credits { font-size: .9em; }
+@media (max-width: 30em) { .sky-stats div { grid-template-columns: 1fr; gap: 0; } }
