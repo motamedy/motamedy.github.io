@@ -1,0 +1,11 @@
+name = "motamedy-api"
+main = "src/index.js"
+compatibility_date = "2025-10-01"
+
+[vars]
+ALLOWED_ORIGINS = "https://motamedy.github.io,http://localhost:8000"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "motamedy"
+database_id = "PASTE-THE-ID-FROM-wrangler-d1-create"

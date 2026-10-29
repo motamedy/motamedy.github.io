@@ -1,6 +1,8 @@
-// Live inputs: weather and air quality (Open-Meteo), aircraft (ADSB.lol), and the ISS
-// orbit (a file a GitHub Action refreshes).
+// Live inputs: weather and air quality (Open-Meteo), aircraft (ADSB.lol, through the
+// Worker when one is configured), and the ISS orbit (a file a GitHub Action refreshes).
 // Every feed fails quietly; the sky still draws without it.
+
+import { API_BASE } from '../config.js';
 
 async function getJSON(url, ms = 9000) {
   const ctl = new AbortController();
@@ -39,7 +41,7 @@ export async function weather(place) {
 // may see few planes, or none.
 export async function aircraft(place, nm = 160) {
   const path = `${place.lat.toFixed(3)}/${place.lon.toFixed(3)}/${nm}`;
-  const url = `https://api.adsb.lol/v2/point/${path}`;
+  const url = API_BASE ? `${API_BASE}/flights/${path}` : `https://api.adsb.lol/v2/point/${path}`;
   const data = await getJSON(url, 8000);
   const now = Date.now();
   return (data.ac || [])
@@ -61,6 +63,13 @@ export async function issTle() {
       if (lines.length >= 2 && tleAgeDays(lines[0]) < 4) return lines.slice(0, 2);
     }
   } catch { /* fall through */ }
+  if (API_BASE) {
+    try {
+      const t = await (await fetch(`${API_BASE}/tle`)).text();
+      const lines = t.trim().split(/\r?\n/).filter((l) => /^[12] /.test(l));
+      if (lines.length >= 2) return lines.slice(0, 2);
+    } catch { /* fall through */ }
+  }
   const j = await getJSON('https://api.wheretheiss.at/v1/satellites/25544/tles');
   return [j.line1, j.line2];
 }
