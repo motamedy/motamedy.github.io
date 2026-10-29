@@ -1,6 +1,7 @@
 import { beep } from './bell.js';
 import { startKeys, echo } from './keys.js';
 import { startSky } from './sky/index.js';
+import { startShannon } from './shannon.js';
 
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = (sel) => document.querySelector(sel);
@@ -124,3 +125,4 @@ startSky({
   buttons: [...document.querySelectorAll('.sky-modes button')],
   card: $('#egg-card'),
 });
+startShannon($('#game'));

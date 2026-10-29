@@ -104,6 +104,19 @@
 <noscript><p class="small">The live sky needs JavaScript.</p></noscript>
 </section>
 
+<section id="guess">
+<h2 data-type="~/guess">Guess</h2>
+<p>In 1951 Claude Shannon measured how predictable English is by asking people to guess a text one letter at a time. Try it on sentences from this page: type the hidden word letter by letter. Names and numbers are left out, since nobody could guess those.</p>
+<div class="game needs-js" id="game">
+  <p class="game-line mono" id="g-line" aria-live="polite"></p>
+  <p class="game-tried mono" id="g-tried" aria-label="Wrong guesses"></p>
+  <p class="game-status mono small" id="g-status">click here and type a letter</p>
+  <input class="g-input" id="g-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Your next letter">
+  <div class="game-stats mono small" id="g-stats"></div>
+  <button type="button" class="textbtn" id="g-next">next word ↵</button>
+</div>
+</section>
+
 <section>
 <h2 data-type="~/contact">Contact</h2>
 <p class="links">email: <a href="mailto:Mobinmotamedim@gmail.com">Mobinmotamedim@gmail.com</a><br>

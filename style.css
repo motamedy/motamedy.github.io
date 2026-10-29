@@ -251,3 +251,18 @@ html.vbell::after {
 .note { margin-top: 1em; }
 .credits { font-size: .9em; }
 @media (max-width: 30em) { .sky-stats div { grid-template-columns: 1fr; gap: 0; } }
+
+/* ~/guess */
+.game { position: relative; padding: 1em 0 .4em; border-top: 1px solid #262626; border-bottom: 1px solid #262626; cursor: text; }
+.game-line { font-size: .85em; line-height: 1.8; margin: 0; }
+.game-line .ctx, .game-line .rest { color: var(--muted); }
+.game-line .slot { display: inline-block; min-width: .62em; text-align: center; border-bottom: 1px solid var(--muted); margin-right: 1px; color: var(--cream); }
+.game-line .slot.now { border-bottom-color: var(--cream); animation: blink 1s steps(1) infinite; }
+.game-line .slot.done { border-bottom-color: transparent; }
+.game-tried { min-height: 1.4em; margin: .4em 0 0; color: #a46d6d; letter-spacing: .15em; }
+.game-status { margin: .3em 0 0; }
+.game-stats { margin: .8em 0 0; line-height: 1.6; }
+.game-stats b { font-weight: 500; color: var(--cream); }
+.g-input { position: absolute; opacity: 0; width: 1px; height: 1px; left: 0; top: 0; border: 0; padding: 0; }
+.game.focused { border-top-color: #3a3346; border-bottom-color: #3a3346; }
+@media (prefers-reduced-motion: reduce) { .game-line .slot.now { animation: none; } }
