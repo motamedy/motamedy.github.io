@@ -122,4 +122,5 @@ startSky({
   dome: $('#dome'),
   stats: $('#sky-stats'),
   buttons: [...document.querySelectorAll('.sky-modes button')],
+  card: $('#egg-card'),
 });

@@ -3,11 +3,11 @@
 
 import {
   RAD, skyMatrix, horizonMatrix, apply, sun, moon, planets, topocentricAlt, refraction,
-  altAzToVec, vecToAltAz, enuFrom, PLANET_COLORS,
+  altAzToVec, vecToAltAz, radecToVec, enuFrom, PLANET_COLORS,
 } from './astro.js';
 import {
   limitTable, limitAt, countVisible, skyParts, skyMag, skyColor, nelm, bortle,
-  CLEAN_AOD,
+  sunLikeReach, CLEAN_AOD,
 } from './model.js';
 import { loadCatalog, milkyWay, rng } from './catalog.js';
 import { cloudTexture, cloudColor } from './clouds.js';
@@ -18,6 +18,7 @@ import { Painter } from './render.js';
 export const MASHHAD = { lat: 36.2972, lon: 59.6067, elev: 995 };
 // Straight through the Earth: the open Pacific, about 1,500 km southwest of Easter Island.
 export const ANTIPODE = { lat: -36.2972, lon: -120.3933, elev: 995 };
+const GLIESE_445 = radecToVec(11.794333 * 15, 78.69116);
 
 const MODES = {
   mashhad: { place: MASHHAD, polluted: true },
@@ -29,7 +30,7 @@ const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const state = {
   mode: 'mashhad', cat: null, milky: milkyWay(),
   wx: new Map(), planes: [], iss: null, passes: [], compare: null,
-  scene: null, version: 0, computedAt: 0,
+  scene: null, version: 0, computedAt: 0, egg: null,
 };
 
 try {
@@ -145,6 +146,7 @@ function compute(now) {
     twinkle.push({ vec: [s.e[i], s.nn[i], s.u[i]], size: s.size[i], alpha: s.alpha[i], speed: 1.5 + 3 * r, phase: r * 40 });
   }
 
+  const eggVec = apply(M, GLIESE_445);
   state.scene = {
     version: ++state.version, t, live, place, mode: state.mode, cond, table, sunAlt, moonInfo,
     sky: { zenith: color(90), mid: color(45), low: color(15), horizon: color(1) },
@@ -152,6 +154,7 @@ function compute(now) {
     sun: { vec: sunVec },
     moon: moonAlt > -1 ? { vec: moonVec, lit: mo.lit, toward: normalize(moonVec.map((m, i) => m + 0.05 * toSun[i])) } : null,
     veil: 0.55 + 0.33 * brightness,
+    egg: eggVec[2] > 0 ? eggVec : null,
     visibleNow: Math.round(k * (clouds && wx?.clouds ? 1 - wx.clouds.total : 1)),
     limZenith, skyMagZenith: skyMag(cond, 90), aod,
     movers: live ? (ms) => movers(place, ms, sunAlt) : () => [],
@@ -310,7 +313,7 @@ function planeWords() {
 
 // ---- wiring ----
 
-export async function startSky({ background, dome, stats, buttons }) {
+export async function startSky({ background, dome, stats, buttons, card }) {
   const painters = [];
   const back = background ? new Painter(background, 'back') : null;
   const front = dome ? new Painter(dome, 'dome') : null;
@@ -345,12 +348,29 @@ export async function startSky({ background, dome, stats, buttons }) {
   addEventListener('sky:mode', (e) => setMode(e.detail));
   for (const b of buttons) b.setAttribute('aria-pressed', String(b.dataset.mode === state.mode));
 
-  if (front) new IntersectionObserver((es) => { domeVisible = es[0].isIntersecting; }).observe(dome);
+  // The easter egg: a star no eye can see, right where it really is.
+  let eggStrength = 0, eggNear = false;
+  if (front) {
+    const near = (ev, radius) => {
+      const sc = state.scene;
+      if (!sc || !sc.egg) return false;
+      const rect = dome.getBoundingClientRect();
+      const p = front.project(sc.egg);
+      const x = (ev.clientX - rect.left) * front.dpr, y = (ev.clientY - rect.top) * front.dpr;
+      return p && Math.hypot(p[0] - x, p[1] - y) < radius * front.dpr;
+    };
+    dome.addEventListener('pointermove', (ev) => { eggNear = near(ev, 14); if (still) draw(0); });
+    dome.addEventListener('pointerleave', () => { eggNear = false; });
+    dome.addEventListener('click', (ev) => { if (near(ev, ev.pointerType === 'touch' ? 22 : 14)) openCard(card); });
+    new IntersectionObserver((es) => { domeVisible = es[0].isIntersecting; }).observe(dome);
+  }
 
   function draw(dt) {
     const now = Date.now();
+    eggStrength += ((eggNear ? 1 : 0) - eggStrength) * Math.min(1, dt * 6 || 1);
+    const egg = state.scene?.egg && eggStrength > 0.02 ? { vec: state.scene.egg, strength: eggStrength } : null;
     if (back) back.frame(state.scene, now, dt, null);
-    if (front && (domeVisible || dt === 0)) front.frame(state.scene, now, dt, null);
+    if (front && (domeVisible || dt === 0)) front.frame(state.scene, now, dt, egg);
   }
 
   addEventListener('resize', () => { painters.forEach((p) => p.resize()); draw(0); });
@@ -414,4 +434,15 @@ export async function startSky({ background, dome, stats, buttons }) {
     draw(dt);
   };
   requestAnimationFrame(tick);
+}
+
+function openCard(card) {
+  if (!card) return;
+  const cmp = state.compare;
+  const limit = cmp ? cmp.dirtyLimit : 4;
+  const set = (sel, text) => { const n = card.querySelector(sel); if (n) n.textContent = text; };
+  set('[data-limit]', limit.toFixed(1));
+  set('[data-reach]', num(sunLikeReach(limit)));
+  if (typeof card.showModal === 'function') card.showModal();
+  else card.setAttribute('open', '');
 }
