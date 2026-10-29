@@ -2,6 +2,7 @@ import { beep } from './bell.js';
 import { startKeys, echo } from './keys.js';
 import { startSky } from './sky/index.js';
 import { startShannon } from './shannon.js';
+import { startRobot } from './robot.js';
 
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = (sel) => document.querySelector(sel);
@@ -126,3 +127,4 @@ startSky({
   card: $('#egg-card'),
 });
 startShannon($('#game'));
+startRobot($('#robot-canvas'));

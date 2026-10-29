@@ -266,3 +266,10 @@ html.vbell::after {
 .g-input { position: absolute; opacity: 0; width: 1px; height: 1px; left: 0; top: 0; border: 0; padding: 0; }
 .game.focused { border-top-color: #3a3346; border-bottom-color: #3a3346; }
 @media (prefers-reduced-motion: reduce) { .game-line .slot.now { animation: none; } }
+
+/* ~/robot */
+.robot-canvas { display: block; width: 100%; height: 300px; background: #1c1c1c; border: 1px solid #262626; touch-action: none; cursor: crosshair; }
+.pid { display: flex; flex-wrap: wrap; gap: .4em 1.6em; margin: .8em 0 0; }
+.pid label { display: inline-flex; align-items: center; gap: .6em; color: var(--muted); }
+.pid output { color: var(--cream); min-width: 2.5em; }
+.pid input[type="range"] { accent-color: var(--purple); width: 8.5em; }
